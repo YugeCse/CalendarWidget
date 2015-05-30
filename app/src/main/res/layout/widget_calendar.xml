@@ -12,19 +12,20 @@
         android:orientation="horizontal">
 
         <ImageView
-            android:id="@+id/imageView"
-            android:src="@mipmap/ic_launcher"
+            android:id="@+id/widgetCalendar_imgForeYear"
+            android:src="@mipmap/ic_arrow_left"
             android:padding="8dp"
             android:layout_width="50dp"
             android:layout_height="match_parent"/>
 
         <ImageView
-            android:id="@+id/imageView2"
-            android:src="@mipmap/ic_launcher"
+            android:id="@+id/widgetCalendar_imgForeMonth"
+            android:src="@mipmap/ic_arrow_left"
             android:padding="8dp"
             android:layout_width="50dp"
             android:layout_height="match_parent"/>
         <TextView
+            android:id="@+id/widgetCalendar_txtTitle"
             android:text="2015年05月"
             android:textColor="#fff"
             android:textSize="18sp"
@@ -33,15 +34,15 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"/>
         <ImageView
-            android:id="@+id/imageView3"
-            android:src="@mipmap/ic_launcher"
+            android:id="@+id/widgetCalendar_imgNextMonth"
+            android:src="@mipmap/ic_arrow_right"
             android:padding="8dp"
             android:layout_width="50dp"
             android:layout_height="match_parent"/>
 
         <ImageView
-            android:id="@+id/imageView4"
-            android:src="@mipmap/ic_launcher"
+            android:id="@+id/widgetCalendar_imgNextYear"
+            android:src="@mipmap/ic_arrow_right"
             android:padding="8dp"
             android:layout_width="50dp"
             android:layout_height="match_parent"/>
@@ -138,11 +139,11 @@
         android:background="#fe5566"/>
     <GridView
         android:id="@+id/widgetCalendar_calendar"
-        android:layout_margin="1dp"
         android:numColumns="7"
         android:horizontalSpacing="1dp"
         android:verticalSpacing="1dp"
         android:scrollbars="none"
+        android:scrollbarSize="0dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 </LinearLayout>

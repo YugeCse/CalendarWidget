@@ -13,7 +13,9 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -25,6 +27,7 @@ import java.util.List;
  */
 public class CalendarView extends LinearLayout {
 
+    /** 日期信息实体类 **/
     public class DayInfo{
         public int day;
         public DayType dayType;
@@ -33,21 +36,21 @@ public class CalendarView extends LinearLayout {
             return String.valueOf(day);
         }
     }
-
+    /** 日期类型 **/
     public enum DayType{
         DAY_TYPE_NONE(0),
         DAY_TYPE_FORE(1),
         DAY_TYPE_NOW(2),
         DAY_TYPE_NEXT(3);
         private int value;
-        private DayType(int value){ this.value = value; }
+        DayType(int value){ this.value = value; }
         public int getValue(){ return value; }
     }
 
     private Context context;//上下文对象
+    private TextView txtTitle;//标题文字
     private GridView dateGrid;//日期表格
     private final Calendar calendar = Calendar.getInstance();
-    private int nowYear = 0,nowMonth = 0,nowDay = 0,centry = 0;//年、月、日、世纪-1参数
     private static final int MAX_DAY_COUNT = 42;//最大格子数量
     private DayInfo[] dayInfos = new DayInfo[MAX_DAY_COUNT];//每月应该有的天数，36为最大格子数
 
@@ -68,6 +71,15 @@ public class CalendarView extends LinearLayout {
         this.context = context;
         View rootView = View.inflate(context,R.layout.widget_calendar,null);
         dateGrid = (GridView)rootView.findViewById(R.id.widgetCalendar_calendar);
+        txtTitle = (TextView)rootView.findViewById(R.id.widgetCalendar_txtTitle);
+        rootView.findViewById(R.id.widgetCalendar_imgForeYear)
+                .setOnClickListener(navigatorClickListener);
+        rootView.findViewById(R.id.widgetCalendar_imgForeMonth)
+                .setOnClickListener(navigatorClickListener);
+        rootView.findViewById(R.id.widgetCalendar_imgNextMonth)
+                .setOnClickListener(navigatorClickListener);
+        rootView.findViewById(R.id.widgetCalendar_imgNextYear)
+                .setOnClickListener(navigatorClickListener);
         this.setOrientation(VERTICAL);//设置布局方向
         this.addView(rootView);//添加根视图
     }
@@ -114,8 +126,32 @@ public class CalendarView extends LinearLayout {
             dayInfos[firstDayIndex + dayCount+i].day = i+1;
             dayInfos[firstDayIndex + dayCount+i].dayType = DayType.DAY_TYPE_NEXT;
         }
+        calendar.add(Calendar.MONTH,1);//还原月份数据
+        txtTitle.setText(new SimpleDateFormat("yyyy年MM月").format(calendar.getTime()));//设置日历显示的标题
         dateGrid.setAdapter(new CalendarAdapter(context,dayInfos));
     }
+
+    /** 导航按钮点击事件 **/
+    private View.OnClickListener navigatorClickListener = new View.OnClickListener(){
+        @Override
+        public void onClick(View v) {
+            switch(v.getId()){
+                case R.id.widgetCalendar_imgForeMonth://上一月
+                    calendar.add(Calendar.MONTH,-1);
+                    break;
+                case R.id.widgetCalendar_imgForeYear://上一年
+                    calendar.add(Calendar.YEAR,-1);
+                    break;
+                case R.id.widgetCalendar_imgNextMonth://下一月
+                    calendar.add(Calendar.MONTH,1);
+                    break;
+                case R.id.widgetCalendar_imgNextYear://下一年
+                    calendar.add(Calendar.YEAR,1);
+                    break;
+            }
+            showCalendar(calendar);//显示日历数据
+        }
+    };
 
     /** 是否是平年 **/
     private boolean isLeapYear(int year){
@@ -137,9 +173,10 @@ public class CalendarView extends LinearLayout {
             case 8:
             case 10:
             case 12:
-            case 13:
+            case 13://其实是1月，当作上一年的13月看待
                 return 31;
             case 2:
+            case 14://其实是2月，当作上一年的14月看
                 return isLeapYear(year)?28:29;
             case 4:
             case 6:
@@ -148,6 +185,18 @@ public class CalendarView extends LinearLayout {
                 return 30;
         }
         return 0;
+    }
+
+    /**
+     * 判断两个Calendar中的日期是否相等
+     * @param calendar
+     * @param calendar1
+     * @return
+     */
+    private boolean isDateEqual(Calendar calendar,Calendar calendar1){
+        return (calendar.get(Calendar.YEAR) == calendar1.get(Calendar.YEAR)
+                && calendar.get(Calendar.MONTH) == calendar1.get(Calendar.MONTH)
+                && calendar.get(Calendar.DATE) == calendar1.get(Calendar.DATE));
     }
 
     /**  日历数据适配器  **/
@@ -180,6 +229,7 @@ public class CalendarView extends LinearLayout {
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
+            final DayInfo item = dayInfos.get(position);
             if(convertView == null){
                 convertView = new TextView(context);
                 AbsListView.LayoutParams cellLayoutParams = new AbsListView.LayoutParams(
@@ -189,12 +239,47 @@ public class CalendarView extends LinearLayout {
                 TextView txtCell = ((TextView) convertView);
                 txtCell.setGravity(Gravity.CENTER);
                 txtCell.setPadding(10,15,10,15);
-                txtCell.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
                 txtCell.getPaint().setFakeBoldText(true);
                 txtCell.setTextSize(TypedValue.COMPLEX_UNIT_DIP,17f);
             }
-            System.out.println("---------->position="+position+",value="+dayInfos.get(position).toString());
-            ((TextView)convertView).setText(dayInfos.get(position).toString());
+            TextView txtItem = ((TextView)convertView);
+            txtItem.setText(item.toString());
+            if(item.dayType == DayType.DAY_TYPE_FORE || item.dayType == DayType.DAY_TYPE_NEXT){//标识文字颜色
+                txtItem.setTextColor(Color.DKGRAY);
+            }else{
+                txtItem.setTextColor(Color.BLACK);
+            }
+            Calendar tmpCalendar = Calendar.getInstance();
+            tmpCalendar.setTimeInMillis(calendar.getTimeInMillis());
+            tmpCalendar.set(Calendar.DAY_OF_MONTH,item.day);
+            if(isDateEqual(Calendar.getInstance(),tmpCalendar) && item.dayType == DayType.DAY_TYPE_NOW){//判断是不是今天
+                txtItem.setBackgroundDrawable(new ColorDrawable(Color.parseColor("#66aaff")));
+            }else if(item.dayType == DayType.DAY_TYPE_NOW){
+                txtItem.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
+            }else{
+                txtItem.setBackgroundDrawable(new ColorDrawable(Color.LTGRAY));
+            }
+            View.OnClickListener listener = new View.OnClickListener(){
+                @Override
+                public void onClick(View v) {
+                    switch(item.dayType){//根据类型判断应该处理的事件
+                        case DAY_TYPE_FORE://跳转至前一个月
+                            calendar.add(Calendar.MONTH,-1);
+                            showCalendar(calendar);//显示日历数据
+                            Toast.makeText(context,item.toString(),1000).show();
+                            break;
+                        case DAY_TYPE_NOW:
+                            Toast.makeText(context,item.toString(),1000).show();
+                            break;
+                        case DAY_TYPE_NEXT://跳转至下一个月
+                            calendar.add(Calendar.MONTH,1);
+                            showCalendar(calendar);//显示日历数据
+                            Toast.makeText(context,item.toString(),1000).show();
+                            break;
+                    }
+                }
+            };
+            txtItem.setOnClickListener(listener);//设置日期点击事件
             return convertView;
         }
     }
